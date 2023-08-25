@@ -1,0 +1,167 @@
+Sure! Here's an example of how you can write the React code to interact with the `PropertyRegistration` smart contract:
+
+```javascript
+import React, { useState, useEffect } from 'react';
+import Web3 from 'web3';
+import PropertyRegistration from './contracts/PropertyRegistration.json'; // Replace with the path to your compiled contract JSON
+
+const ContractInteraction = () => {
+  const [contract, setContract] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [propertyCount, setPropertyCount] = useState(0);
+  const [nocCount, setNocCount] = useState(0);
+  const [properties, setProperties] = useState([]);
+  const [nocs, setNocs] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    connectToContract();
+  }, []);
+
+  const connectToContract = async () => {
+    try {
+      if (window.ethereum) {
+        const web3 = new Web3(window.ethereum);
+        await window.ethereum.enable();
+        const accounts = await web3.eth.getAccounts();
+        const networkId = await web3.eth.net.getId();
+        const deployedNetwork = PropertyRegistration.networks[networkId];
+        const contractInstance = new web3.eth.Contract(
+          PropertyRegistration.abi,
+          deployedNetwork && deployedNetwork.address
+        );
+        setContract(contractInstance);
+        setAccount(accounts[0]);
+        getPropertyData();
+        getNOCData();
+      } else {
+        console.error('Web3 not detected. Please install MetaMask or use a compatible browser.');
+      }
+    } catch (error) {
+      console.error('Error connecting to contract:', error);
+    }
+  };
+
+  const getPropertyData = async () => {
+    setLoading(true);
+    const count = await contract.methods.getPropertyCount().call({ from: account });
+    setPropertyCount(count);
+
+    const propertyList = [];
+    for (let i = 0; i < count; i++) {
+      const property = await contract.methods.getProperty().call({ from: account, gas: 3000000 });
+      propertyList.push(property);
+    }
+    setProperties(propertyList);
+    setLoading(false);
+  };
+
+  const getNOCData = async () => {
+    setLoading(true);
+    const count = await contract.methods.getNOCCount().call({ from: account });
+    setNocCount(count);
+
+    const nocList = [];
+    for (let i = 0; i < count; i++) {
+      const noc = await contract.methods.getNOC().call({ from: account, gas: 3000000 });
+      nocList.push(noc);
+    }
+    setNocs(nocList);
+    setLoading(false);
+  };
+
+  const registerProperty = async () => {
+    try {
+      setLoading(true);
+      // Replace with the desired values for property registration
+      const plotNumber = 123;
+      const province = 'Your Province';
+      const district = 'Your District';
+      const tehsil = 'Your Tehsil';
+      const length = 100;
+      const width = 50;
+      const CNIC = 'Your CNIC';
+      const userId = 'Your User ID';
+
+      await contract.methods
+        .registerProperty(plotNumber, province, district, tehsil, length, width, CNIC, userId)
+        .send({ from: account, gas: 3000000 });
+
+      getPropertyData();
+    } catch (error) {
+      console.error('Error registering property:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addNOC = async () => {
+    try {
+      setLoading(true);
+      // Replace with the desired values for NOC addition
+      const plotNumber =
+
+ 123;
+      const reason = 'Your Reason';
+
+      await contract.methods.addNOC(plotNumber, reason).send({ from: account, gas: 3000000 });
+
+      getNOCData();
+    } catch (error) {
+      console.error('Error adding NOC:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <h2>Property Registration</h2>
+      <button onClick={registerProperty}>Register Property</button>
+      <button onClick={addNOC}>Add NOC</button>
+
+      <h3>Properties</h3>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <ul>
+          {properties.map((property, index) => (
+            <li key={index}>
+              <p>Plot Number: {property.plotNumber}</p>
+              <p>Province: {property.province}</p>
+              <p>District: {property.district}</p>
+              <p>Tehsil: {property.tehsil}</p>
+              <p>Length: {property.length}</p>
+              <p>Width: {property.width}</p>
+              <p>CNIC: {property.CNIC}</p>
+              <p>User ID: {property.userId}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3>NOCs</h3>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <ul>
+          {nocs.map((noc, index) => (
+            <li key={index}>
+              <p>Plot Number: {noc.plotNumber}</p>
+              <p>Reason: {noc.reason}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+export default ContractInteraction;
+```
+
+Make sure you have the necessary dependencies installed (`web3` and `PropertyRegistration.json`), and replace `'./contracts/PropertyRegistration.json'` with the actual path to your compiled contract JSON file.
+
+In the `registerProperty` and `addNOC` functions, replace the commented placeholders with the desired values for property registration and NOC addition, respectively.
+
+Render the `ContractInteraction` component in your React application to display the property registration functionality and the list of properties and NOCs.
